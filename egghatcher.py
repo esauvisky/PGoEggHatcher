@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.7
 import argparse
 import re
 import asyncio
@@ -179,6 +180,7 @@ class Main:
             await self.check_my_eggs()
             self.state = 'on_hatching'
 
+        await self.tap('pokeball_button')
         return True
 
 
@@ -204,15 +206,17 @@ class Main:
             else:
                 # wtf... a gps or weather dialog perhaps?
                 await self.deal_with_blocking_dialogs()
+                continue
 
-            if self.args.switch:
+            if self.args.switch and self.state == 'on_world':
                 if time_now - last_switch_time >= self.config['times']['on_each_app']:
                     logger.warning('OK, TIME TO CHECK OUR FRIEND!')
                     await self.switch_app()
                     last_switch_time = time_now
                     last_check_time = time.time() - self.config['times']['on_world']
+                    continue
 
-            if time_now - last_check_time >= self.config['times']['on_world']:
+            if time_now - last_check_time >= self.config['times']['on_world'] and self.state == 'on_world':
                 # if we spent more than allowed on the world
                 #   check the freaking eggs
                 if await self.check_my_eggs():

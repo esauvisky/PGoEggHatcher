@@ -25,5 +25,5 @@ waits:
 
 
 times:
-    on_world: 240     # interval between eggs checks (should be less than on_each_app)
+    on_world: 480     # interval between eggs checks
     on_each_app: 120  # time to stay on each app if --switch is on
