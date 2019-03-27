@@ -66,6 +66,18 @@ class Main:
         if str(keycode).lower in self.config['waits']:
             await asyncio.sleep(self.config['waits'][str(keycode).lower])
 
+    async def swipe(self, location, duration):
+        await self.p.swipe(
+            self.config['locations'][location][0],
+            self.config['locations'][location][1],
+            self.config['locations'][location][2],
+            self.config['locations'][location][3],
+            duration
+        )
+        if location in self.config['waits']:
+            logger.info('Waiting ' + str(self.config['waits'][location]) + ' seconds after ' + str(self.config['locations'][location]) + '...')
+            await asyncio.sleep(self.config['waits'][location])
+
     async def cap_and_crop(self, box_location):
         screencap = await self.p.screencap()
         crop = screencap.crop(self.config['locations'][box_location])
@@ -98,6 +110,21 @@ class Main:
     async def deal_with_blocking_dialogs(self):
         logger.error('I smell sketchiness! >.<')
         await self.tap('im_a_passenger_button_box')
+
+    async def stop_pokemon_goplus(self, how_long):
+        logger.error('Lets stop pokepoke and get some items back')
+        await self.tap('pokeball_button')
+        await self.tap('settings_button')
+        await self.swipe('swipe_to_bottom', 300)
+        await self.swipe('swipe_to_bottom', 500)
+        await self.tap('pokemon_go_plus_button')
+        await self.tap('nearby_pokemon_button')
+        logger.info('Oh now we wait for ' + str(int(how_long / 60)) + ' minutes to refill this crappy backpack!')
+        await asyncio.sleep(how_long)
+        await self.tap('nearby_pokemon_button')
+        logger.info("There, that should be good, i'm tired already.... Back to MY EGGS!")
+        await self.tap('pokeball_button')
+        await self.tap('pokeball_button')
 
     async def incubate_a_fucking_egg(self):
         # click first egg
@@ -192,6 +219,8 @@ class Main:
         # forces the first round to do the checks and switching
         last_check_time = time.time() - self.config['times']['on_world']
         last_switch_time = time.time()# - self.config['times']['on_each_app']
+        last_refill_time = time.time()# - self.config['times']['on_each_app']
+
         while True:
             screencap = await self.p.screencap()
             self.state = await self.get_current_state(screencap)
@@ -207,6 +236,14 @@ class Main:
                 # wtf... a gps or weather dialog perhaps?
                 await self.deal_with_blocking_dialogs()
                 continue
+
+            if args.refill and time_now - last_refill_time >= self.config['times']['refill_each'] and self.state == 'on_world':
+                await self.stop_pokemon_goplus(120)
+                last_refill_time = time_now
+                # if await self.stop_pokemon_goplus(120):
+                #     last_refill_time = time_now
+                # else:
+                #     await self.deal_with_blocking_dialogs()
 
             if self.args.switch and self.state == 'on_world':
                 if time_now - last_switch_time >= self.config['times']['on_each_app']:
@@ -236,6 +273,8 @@ if __name__ == '__main__':
                         help="Config file location.")
     parser.add_argument('--switch', type=bool, nargs='?', const=True, default=False,
                         help="Periodically switches between two parallel running instances, to hatch two different accounts simultaneously.")
+    parser.add_argument('--refill', type=bool, nargs='?', const=True, default=False,
+                        help="Periodically goes to the menu and disables pokemon catch to get more items for a while.")
     args = parser.parse_args()
 
     asyncio.run(Main(args).start())
