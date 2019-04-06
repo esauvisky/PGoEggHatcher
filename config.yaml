@@ -15,6 +15,11 @@ locations:
                                                         #   happens to get the coordinates)
     second_app_position: [540, 900]                     # (optional) location to click after the app switcher is raised
 
+    settings_button: [990, 780]
+    swipe_to_bottom: [115, 1940, 115, 300]
+    pokemon_go_plus_button: [240, 1230]
+    nearby_pokemon_button: [930, 1130]
+
 waits:
     pokeball_button: 2
     pokémon_list_button: 3
@@ -25,5 +30,6 @@ waits:
 
 
 times:
-    on_world: 240     # interval between eggs checks
+    on_world: 480     # interval between eggs checks
     on_each_app: 120  # time to stay on each app if --switch is on
+    refill_each: 240
