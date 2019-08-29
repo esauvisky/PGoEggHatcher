@@ -8,9 +8,9 @@ from colorlog import ColoredFormatter
 
 
 logger = logging.getLogger('PokemonGo')
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
-ch.setLevel(logging.WARNING)
+ch.setLevel(logging.DEBUG)
 formatter = ColoredFormatter("  %(log_color)s%(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s")
 ch.setFormatter(formatter)
 logger.addHandler(ch)

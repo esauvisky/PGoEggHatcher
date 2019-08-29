@@ -18,9 +18,9 @@ from pokemonlib import PokemonGo
 from colorlog import ColoredFormatter
 
 logger = logging.getLogger('ivcheck')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
+ch.setLevel(logging.DEBUG)
 formatter = ColoredFormatter("  %(log_color)s%(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s")
 ch.setFormatter(formatter)
 logger.addHandler(ch)
@@ -45,6 +45,8 @@ class Main:
         tools = pyocr.get_available_tools()
         self.tool = tools[0]
         self.state = ''
+        self.egg_walked = 0
+        self.egg_total = 0
 
     async def tap(self, location):
         coordinates = self.config['locations'][location]
@@ -93,31 +95,45 @@ class Main:
     async def get_current_state(self, screencap):
         text_eggs = screencap.crop(self.config['locations']['eggs_label_box'])
         text_eggs = self.tool.image_to_string(text_eggs).replace("\n", " ")
-        text_oh = screencap.crop(self.config['locations']['oh_hatching_box'])
-        text_oh = self.tool.image_to_string(text_oh).replace("\n", " ")
-        text_gps = screencap.crop(self.config['locations']['im_a_passenger_button_box'])
-        text_gps = self.tool.image_to_string(text_gps).replace("\n", " ")
-
         if 'EGGS' in text_eggs:
             return 'on_eggs'
-        elif 'Oh' in text_oh or '?' in text_oh:
-            return 'on_hatching'
-        elif 'PASSENGER' in text_gps:
+
+        text_menu = screencap.crop(self.config['locations']['settings_button_box'])
+        text_menu = self.tool.image_to_string(text_menu).replace("\n", " ")
+        if 'SETTINGS' in text_menu:
+            return 'on_menu'
+
+        text_gps = screencap.crop(self.config['locations']['im_a_passenger_button_box'])
+        text_gps = self.tool.image_to_string(text_gps).replace("\n", " ")
+        if 'PASSENGER' in text_gps:
             await self.deal_with_blocking_dialogs()
-        else:
             return 'on_world'
+
+        text_oh = screencap.crop(self.config['locations']['oh_hatching_box'])
+        text_oh = self.tool.image_to_string(text_oh).replace("\n", " ")
+        if 'Oh' in text_oh or '?' in text_oh:
+            return 'on_hatching'
+
+        return 'on_world'
 
     async def deal_with_blocking_dialogs(self):
         logger.error('I smell sketchiness! >.<')
         await self.tap('im_a_passenger_button_box')
 
+    async def reconnect_go_plus(self):
+        logger.error('Disconnecting Gotcha...')
+        await self.tap('goplus_button')
+        logger.error('Reconnecting Gotcha againd and waiting a bit...')
+        await self.tap('goplus_button')
+        await asyncio.sleep(10)
+
     async def stop_pokemon_goplus(self, how_long):
         logger.error('Lets stop pokepoke and get some items back')
         await self.tap('pokeball_button')
-        await self.tap('settings_button')
-        await self.swipe('swipe_to_bottom', 300)
-        await self.swipe('swipe_to_bottom', 500)
-        await self.tap('pokemon_go_plus_button')
+        await self.tap('settings_button_box')
+        await self.swipe('swipe_to_bottom', 800)
+        await self.swipe('swipe_to_bottom', 800)
+        await self.tap('pokemon_go_plus_menu_entry')
         await self.tap('nearby_pokemon_button')
         logger.info('Oh now we wait for ' + str(int(how_long / 60)) + ' minutes to refill this crappy backpack!')
         await asyncio.sleep(how_long)
@@ -169,6 +185,11 @@ class Main:
 
         # opens the eggs list
         await self.tap('pokeball_button')
+        screencap = await self.p.screencap()
+        if not await self.get_current_state(screencap) == 'on_menu':
+            logger.error('Hm.. something fishy going on....')
+            await self.deal_with_blocking_dialogs()
+            return False
         await self.tap('pokémon_list_button')
         await self.tap('eggs_tab')
 
@@ -217,9 +238,18 @@ class Main:
         logger.error('Oh.. eggy eggy eggies...')
 
         # forces the first round to do the checks and switching
+        time_now = time.time()
         last_check_time = time.time() - self.config['times']['on_world']
         last_switch_time = time.time()# - self.config['times']['on_each_app']
         last_refill_time = time.time()# - self.config['times']['on_each_app']
+        last_goplus_time = time.time()# - self.config['times']['on_each_app']
+
+        if args.gotcha:
+            await self.reconnect_go_plus()
+            last_goplus_time = time_now
+        if args.refill:
+            await self.stop_pokemon_goplus(self.config['times']['refill_for'])
+            last_refill_time = time_now
 
         while True:
             screencap = await self.p.screencap()
@@ -237,13 +267,13 @@ class Main:
                 await self.deal_with_blocking_dialogs()
                 continue
 
+            if args.gotcha and time_now - last_goplus_time >= self.config['times']['reconnect_goplus'] and self.state == 'on_world':
+                    await self.reconnect_go_plus()
+                    last_goplus_time = time_now
+
             if args.refill and time_now - last_refill_time >= self.config['times']['refill_each'] and self.state == 'on_world':
-                await self.stop_pokemon_goplus(120)
-                last_refill_time = time_now
-                # if await self.stop_pokemon_goplus(120):
-                #     last_refill_time = time_now
-                # else:
-                #     await self.deal_with_blocking_dialogs()
+                    await self.stop_pokemon_goplus(self.config['times']['refill_for'])
+                    last_refill_time = time_now
 
             if self.args.switch and self.state == 'on_world':
                 if time_now - last_switch_time >= self.config['times']['on_each_app']:
@@ -262,7 +292,7 @@ class Main:
                     await self.deal_with_blocking_dialogs()
 
 
-            await asyncio.sleep(10)
+            await asyncio.sleep(60)
 
 
 if __name__ == '__main__':
@@ -275,6 +305,8 @@ if __name__ == '__main__':
                         help="Periodically switches between two parallel running instances, to hatch two different accounts simultaneously.")
     parser.add_argument('--refill', type=bool, nargs='?', const=True, default=False,
                         help="Periodically goes to the menu and disables pokemon catch to get more items for a while.")
+    parser.add_argument('--gotcha', type=bool, nargs='?', const=True, default=False,
+                        help="Reconnects gotcha periodically to bypass 1h limit")
     args = parser.parse_args()
 
     asyncio.run(Main(args).start())
