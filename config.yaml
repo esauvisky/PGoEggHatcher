@@ -13,12 +13,14 @@ locations:
     oh_hatching_box: [430, 500, 700, 1000]               # the text Oh? when the egg hatches
                                                         #   (you'll have to wait until it
                                                         #   happens to get the coordinates)
-    second_app_position: [540, 900]                     # (optional) location to click after the app switcher is raised
+    second_app_position: [800, 1050]                    # (optional) location to click after the app switcher is raised
+    # MIUI9: second_app_position: [540, 900]                     # (optional) location to click after the app switcher is raised
 
-    settings_button: [990, 780]
-    swipe_to_bottom: [115, 1940, 115, 300]
-    pokemon_go_plus_button: [240, 1230]
+    settings_button_box: [740, 180, 960, 240]                     # the text SETTINGS on the top right corner
+    swipe_to_bottom: [120, 1900, 115, 500]
+    pokemon_go_plus_menu_entry: [240, 1240]     # TODO: use box and check to avoisd clicking facebook
     nearby_pokemon_button: [930, 1130]
+    goplus_button: [970, 450]
 
 waits:
     pokeball_button: 2
@@ -27,9 +29,18 @@ waits:
     first_egg_distance_box: 3
     incubate_button_box: 3
     incubator_uses_left_box: 5
+    second_app_position: 5
+    swipe_to_bottom: 3
+    pokemon_go_plus_button: 5
+    settings_button: 3
+    goplus_button: 7
+    settings_button_box: 4
 
 
 times:
-    on_world: 480     # interval between eggs checks
+    on_world: 250     # interval between eggs checks
     on_each_app: 120  # time to stay on each app if --switch is on
-    refill_each: 240
+    refill_each: 580  # time between each items refill (for go+)
+    refill_for: 240   # time to keep refilling (TOOD)
+                      # TODO: remove this and OCR the number of items
+    reconnect_goplus: 300  # time between each go++ reonnect

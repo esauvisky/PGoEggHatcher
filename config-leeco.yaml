@@ -1,5 +1,5 @@
 locations:
-    pokeball_button: [540, 1770]
+    pokeball_button: [540, 1800]
     pokémon_list_button: [240, 1525]
     eggs_tab: [870, 180]
     first_egg_distance_box: [80, 635, 285, 700]         # the whole thing: '0 / 10km'
@@ -19,25 +19,27 @@ locations:
     swipe_to_bottom: [80, 1720, 80, 135]
     pokemon_go_plus_menu_entry: [340, 900]
     nearby_pokemon_button: [940, 1140]
-    goplus_button: [972, 400]
+    goplus_button: [970, 450]
 
 waits:
-    pokeball_button: 3
-    pokémon_list_button: 5
-    eggs_tab: 4
-    first_egg_distance_box: 4
-    incubate_button_box: 5
+    pokeball_button: 2
+    pokémon_list_button: 3
+    eggs_tab: 3
+    first_egg_distance_box: 3
+    incubate_button_box: 3
     incubator_uses_left_box: 5
     second_app_position: 5
-    swipe_to_bottom: 4
-    settings_button_box: 5
-    goplus_button: 6.3  # this time is critical, you must confirm if gotcha reconnects successfully and adjust it
-                      # usually less than 5 is too early and 8 or more is too much
+    swipe_to_bottom: 3
+    pokemon_go_plus_button: 5
+    settings_button: 3
+    goplus_button: 7
+    settings_button_box: 4
+
 
 times:
-    on_world: 240     # interval between eggs checks
+    on_world: 250     # interval between eggs checks
     on_each_app: 120  # time to stay on each app if --switch is on
-    refill_each: 480  # time between each items refill (for go+)
-    refill_for: 180   # time to keep refilling (TOOD)
+    refill_each: 580  # time between each items refill (for go+)
+    refill_for: 240   # time to keep refilling (TOOD)
                       # TODO: remove this and OCR the number of items
-    reconnect_goplus: 3000  # time between each go++ reonnect
+    reconnect_goplus: 3400  # time between each go++ reonnect
